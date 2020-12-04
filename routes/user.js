@@ -25,77 +25,66 @@ router.post('/login', (req, res) => {
         return;
     }
 
+    User.find({email: req.body.email})
+            .select({ email: 1, password: 1, _id: 1, position: 1 })
+            .then(result => {
+                if(result.length){
+                    if(req.body.email == result[0].email){
+                        if(passwordHash.verify(req.body.password, result[0].password)){
+                            var tokenValue = {
+                                id: result[0]._id,
+                                position: result[0].position
+                            }
+                            
+                           let accessToken = jwt.sign(tokenValue, 'veegilmynamewayne', {algorithm: "HS256"})
+                            if(req.body.cookie == 1){
+                                res.cookie('remember', accessToken, { maxAge: 900000, httpOnly: true })
+                            }else{
+                                res.json(accessToken)
+                            }
 
-    //////////// Check if email has been registered////////
-    async function findUser(){
-        try{
-            const user = await User
-            .findOne({ email: req.body.email})
-            .select({ email: 1, password: 1, _id: 1, position: 1});
-
-            if(user.length = 1){
-
-                if(req.body.email == user.email){
-                    if(passwordHash.verify(req.body.password, user.password)){
-                        var tokenValue = {
-                            id: user._id,
-                            position: user.position
+                            
+                        }else{
+                            res.status(404).json({
+                                success: false,
+                                status: 404,
+                                message: 'Invalid password'
+                            });
+                            
                         }
-                        
-                       let accessToken = jwt.sign(tokenValue, 'veegilmynamewayne', {algorithm: "HS256"})
-                        res.json(accessToken);
-                        
                     }else{
                         res.status(404).json({
                             success: false,
                             status: 404,
-                            message: 'Invalid password'
+                            message: 'email address not registered'
                         });
-                        
+     
                     }
+                
                 }else{
                     res.status(404).json({
                         success: false,
                         status: 404,
                         message: 'email address not registered'
                     });
-
-                  
                 }
-
-
-                /*
-                res.status(200).json({
-                    success: true,
-                    status: 200,
-                    data: user
-                });
-                */
-                
-              //  user.token = jwt.sign(user, process.env.JWT_SECRET);
-            }else{
+            }, err => {
                 res.status(404).json({
                     success: false,
                     status: 404,
-                    message: `The email ${req.body.email} not registered`
+                    message: err
                 });
-            }
-            
-        }catch(ex){
-            if(ex.message){
-                res.status(400).json({
+            })
+            .catch(ex => {
+                res.status(500).json({
                     success: false,
                     status: 500,
-                    message: "error occur while running this process"
+                    message: ex
                 });
-            }
-        }
-       
-    }
-   findUser();
+
+            });
 
 });
-
 
 
 
