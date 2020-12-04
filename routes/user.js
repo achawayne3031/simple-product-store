@@ -75,14 +75,7 @@ router.post('/login', (req, res) => {
                     message: err
                 });
             })
-            .catch(ex => {
-                res.status(500).json({
-                    success: false,
-                    status: 500,
-                    message: ex
-                });
-
-            });
+          
 
 });
 
